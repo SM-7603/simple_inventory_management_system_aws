@@ -3,19 +3,24 @@ from werkzeug.utils import secure_filename
 import os
 import json
 import uuid
-import boto3
-
-# Initialize S3 client
-s3_client = boto3.client('s3')
-
-# Replace this with your actual S3 bucket name
-BUCKET_NAME = "inventory-management-bucket-it"
 
 app = Flask(__name__)
 
-# Path to inventory.json
+# Local data paths
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 INVENTORY_FILE = os.path.join(DATA_DIR, "inventory.json")
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
+
+# Ensure necessary directories exist
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+# Initialize inventory.json if it doesn't exist
+if not os.path.exists(INVENTORY_FILE):
+    with open(INVENTORY_FILE, "w") as file:
+        json.dump({"items": []}, file, indent=4)
 
 # Route to serve the frontend
 @app.route("/")
@@ -71,27 +76,16 @@ def delete_inventory(item_name):
 def upload_contract():
     file = request.files["file"]
     filename = secure_filename(file.filename)
-    
-    try:
-        # Upload the file to S3
-        s3_client.upload_fileobj(file, BUCKET_NAME, filename)
-        return jsonify({"message": f"{filename} uploaded successfully to S3"}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    file.save(os.path.join(UPLOAD_DIR, filename))
+    return jsonify({"message": f"{filename} uploaded successfully to local storage"}), 201
 
-# API: download contract
+# API: Download contract
 @app.route("/download/<filename>", methods=["GET"])
 def download_contract(filename):
     try:
-        # Download the file from S3 to a temporary local path
-        temp_file_path = os.path.join("downloads", filename)
-        os.makedirs("downloads", exist_ok=True)  # Ensure the directory exists
-        s3_client.download_file(BUCKET_NAME, filename, temp_file_path)
-        
-        # Serve the file to the client
-        return send_from_directory(directory="downloads", path=filename, as_attachment=True)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return send_from_directory(directory=UPLOAD_DIR, path=filename, as_attachment=True)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8080)
