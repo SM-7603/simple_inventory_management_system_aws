@@ -106,3 +106,53 @@ gunicorn -b 0.0.0.0:8000 app:app
 ```bash
 curl http://127.0.0.1:8000
 ```
+
+### Systemd setup for Gunicorn
+
+> [!NOTE]
+> `myproject` is just the name that I choose, you can choose anything you want.
+
+- Create the systemd service file:
+
+```bash
+sudo vi /etc/systemd/system/myproject.service
+```
+
+- Add this:
+
+```yaml
+[Unit]
+Description=Gunicorn instance to serve the Flask app
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/simple_inventory_management_system_aws
+ExecStart=/home/ubuntu/simple_inventory_management_system_aws/venv/bin/gunicorn -b localhost:8000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Enable & Start the service
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start myproject
+sudo systemctl enable myproject
+```
+
+- Verify whether the services work
+
+```bash
+sudo systemctl status myproject
+curl http://127.0.0.1:8000
+```
+
+- Inspect the logs (*in case of errors*)
+
+```bash
+sudo journalctl -u myproject
+```
