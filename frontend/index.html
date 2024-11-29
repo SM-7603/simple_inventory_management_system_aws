@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management</title>
+    <script>
+        // Function to fetch and display inventory
+        async function fetchInventory() {
+            const response = await fetch('/inventory');
+            const data = await response.json();
+            console.log(data);
+
+            const inventoryDiv = document.getElementById('inventory');
+            inventoryDiv.innerHTML = ''; // Clear previous content
+
+            if (data.items && data.items.length > 0) {
+                // Create table for inventory
+                const table = document.createElement('table');
+                table.border = '1';
+                table.style.borderCollapse = 'collapse';
+                table.style.width = '100%';
+
+                // Add table headers
+                const headerRow = document.createElement('tr');
+                ['Name', 'Type', 'Price', 'Stock', 'Actions'].forEach(headerText => {
+                    const th = document.createElement('th');
+                    th.style.padding = '10px';
+                    th.style.textAlign = 'left';
+                    th.textContent = headerText;
+                    headerRow.appendChild(th);
+                });
+                table.appendChild(headerRow);
+
+                // Add table rows for each inventory item
+                data.items.forEach(item => {
+                    const row = document.createElement('tr');
+
+                    ['name', 'type', 'price', 'stock'].forEach(key => {
+                        const td = document.createElement('td');
+                        td.style.padding = '10px';
+                        td.textContent = item[key];
+                        row.appendChild(td);
+                    });
+
+                    // Add action buttons (Delete, Update)
+                    const actionsTd = document.createElement('td');
+                    actionsTd.style.padding = '10px';
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.style.marginRight = '5px';
+                    deleteButton.onclick = async () => {
+                        await fetch(`/inventory/${item.name}`, { method: 'DELETE' });
+                        fetchInventory(); // Refresh inventory
+                    };
+
+                    const updateButton = document.createElement('button');
+                    updateButton.textContent = 'Update';
+                    updateButton.onclick = () => showUpdateForm(item);
+
+                    actionsTd.appendChild(deleteButton);
+                    actionsTd.appendChild(updateButton);
+                    row.appendChild(actionsTd);
+
+                    table.appendChild(row);
+                });
+
+                inventoryDiv.appendChild(table);
+            } else {
+                inventoryDiv.textContent = 'No inventory items found.';
+            }
+        }
+
+        // Function to add a new item
+        async function addItem(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const newItem = {
+                name: formData.get('name'),
+                type: formData.get('type'),
+                price: parseFloat(formData.get('price')),
+                stock: parseInt(formData.get('stock'))
+            };
+
+            await fetch('/inventory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newItem)
+            });
+
+            event.target.reset();
+            fetchInventory(); // Refresh inventory
+        }
+
+        // Function to show update form
+        function showUpdateForm(item) {
+            const updateForm = document.getElementById('updateForm');
+            updateForm.style.display = 'block';
+
+            document.getElementById('updateName').value = item.name;
+            document.getElementById('updateType').value = item.type;
+            document.getElementById('updatePrice').value = item.price;
+            document.getElementById('updateStock').value = item.stock;
+        }
+
+        // Function to update an existing item
+        async function updateItem(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const updatedItem = {
+                type: formData.get('type'),
+                price: parseFloat(formData.get('price')),
+                stock: parseInt(formData.get('stock'))
+            };
+
+            const itemName = formData.get('name');
+            await fetch(`/inventory/${itemName}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedItem)
+            });
+
+            document.getElementById('updateForm').style.display = 'none';
+            fetchInventory(); // Refresh inventory
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        input, button {
+            margin: 5px;
+        }
+
+        table {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Inventory Management</h1>
+
+    <!-- Form to add new items -->
+    <form id="addForm" onsubmit="addItem(event)">
+        <h3>Add New Item</h3>
+        <label>
+            Name:
+            <input type="text" name="name" required>
+        </label>
+        <label>
+            Type:
+            <input type="text" name="type" required>
+        </label>
+        <label>
+            Price:
+            <input type="number" name="price" step="0.01" required>
+        </label>
+        <label>
+            Stock:
+            <input type="number" name="stock" required>
+        </label>
+        <button type="submit">Add Item</button>
+    </form>
+
+    <!-- Form to update items -->
+    <form id="updateForm" onsubmit="updateItem(event)" style="display: none;">
+        <h3>Update Item</h3>
+        <label>
+            Name (read-only):
+            <input type="text" id="updateName" name="name" readonly>
+        </label>
+        <label>
+            Type:
+            <input type="text" id="updateType" name="type" required>
+        </label>
+        <label>
+            Price:
+            <input type="number" id="updatePrice" name="price" step="0.01" required>
+        </label>
+        <label>
+            Stock:
+            <input type="number" id="updateStock" name="stock" required>
+        </label>
+        <button type="submit">Update Item</button>
+    </form>
+
+    <!-- Inventory display -->
+    <div id="inventory" style="margin-top: 20px;"></div>
+
+    <button onclick="fetchInventory()">Fetch Inventory</button>
+</body>
+</html>

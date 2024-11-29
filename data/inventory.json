@@ -1,0 +1,42 @@
+{
+    "items": [
+        {
+            "name": "16GB DDR4 RAM",
+            "type": "Memory",
+            "price": 80,
+            "stock": 50
+        },
+        {
+            "name": "1TB NVMe SSD",
+            "type": "Storage",
+            "price": 150,
+            "stock": 25
+        },
+        {
+            "name": "Intel i7 Processor",
+            "type": "CPU",
+            "price": 300,
+            "stock": 10
+        },
+        {
+            "name": "Windows 10 Pro License",
+            "type": "Software",
+            "price": 120,
+            "stock": 100
+        },
+        {
+            "name": "8TB HDD",
+            "type": "Storage",
+            "price": 260,
+            "stock": 20,
+            "id": "1eea964c-45b1-4d5e-b980-354d172a94b4"
+        },
+        {
+            "name": "AMD Ryzen 5 Processor",
+            "type": "CPU",
+            "price": 100,
+            "stock": 17,
+            "id": "7d48380a-72e1-490b-8702-6fd552203d41"
+        }
+    ]
+}
